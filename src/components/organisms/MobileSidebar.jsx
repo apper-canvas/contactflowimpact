@@ -28,10 +28,9 @@ const MobileSidebar = () => {
       badge: "Soon"
     },
     { 
-      to: "/reports", 
+to: "/reports", 
       icon: "BarChart3", 
-      label: "Reports",
-      badge: "Soon"
+      label: "Reports"
     },
     { 
       to: "/settings", 

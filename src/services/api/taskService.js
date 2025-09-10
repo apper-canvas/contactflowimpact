@@ -84,12 +84,23 @@ this.tasks[index] = updatedTask;
     return { ...updatedTask };
   }
 
-  async getByContactId(contactId) {
+async getByContactId(contactId) {
     await delay(200);
     return [...this.tasks]
       .filter(task => task.contactId === parseInt(contactId))
       .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
   }
-}
 
+  async getActivityMetrics() {
+    await delay(150);
+    const completed = this.tasks.filter(task => task.status === 'Completed').length;
+    const pending = this.tasks.filter(task => task.status === 'Pending').length;
+    const overdue = this.tasks.filter(task => {
+      if (task.status === 'Completed') return false;
+      return new Date(task.dueDate) < new Date();
+    }).length;
+
+    return { completed, pending, overdue, total: this.tasks.length };
+  }
+}
 export default new TaskService();
