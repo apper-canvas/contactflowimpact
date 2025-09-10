@@ -250,61 +250,65 @@ const getInitials = (firstName, lastName) => {
             </div>
 
             {/* Task Interactions Timeline */}
-            <div className="space-y-4">
+<div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-neutral-900">Task Interactions</h3>
+                <h3 className="font-semibold text-neutral-900">Recent Activities</h3>
                 <Badge variant="neutral" size="sm">
-                  {contactTasks.length} task{contactTasks.length !== 1 ? 's' : ''}
+                  {contactTasks.length} activity{contactTasks.length !== 1 ? 'ies' : 'y'}
                 </Badge>
               </div>
               
               {loadingTasks ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
-                  <span className="ml-2 text-sm text-neutral-600">Loading tasks...</span>
+                  <span className="ml-2 text-sm text-neutral-600">Loading activities...</span>
                 </div>
               ) : contactTasks.length === 0 ? (
                 <div className="text-center py-8">
-                  <ApperIcon name="CheckSquare" className="w-12 h-12 text-neutral-300 mx-auto mb-3" />
-                  <p className="text-neutral-500">No tasks associated with this contact</p>
+                  <ApperIcon name="Activity" className="w-12 h-12 text-neutral-300 mx-auto mb-3" />
+                  <p className="text-neutral-500">No recent activities with this contact</p>
                 </div>
               ) : (
                 <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {contactTasks.map((task) => (
-                    <div key={task.Id} className="bg-neutral-50 rounded-lg p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <h4 className={cn(
-                              "text-sm font-medium",
-                              task.completed ? "line-through text-neutral-500" : "text-neutral-900"
-                            )}>
-                              {task.title}
-                            </h4>
-                            <Badge size="sm" variant={getTaskStatusColor(task)}>
-                              {getTaskStatusText(task)}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-neutral-600 mb-2 line-clamp-2">
-                            {task.description}
-                          </p>
-                          <div className="flex items-center space-x-4 text-xs text-neutral-500">
-                            <span className="flex items-center">
-                              <ApperIcon name="Calendar" className="w-3 h-3 mr-1" />
-                              {formatDate(task.dueDate)}
-                            </span>
-                            <span className="flex items-center">
-                              <ApperIcon name="Tag" className="w-3 h-3 mr-1" />
-                              {task.type}
-                            </span>
-                            <Badge size="sm" variant="neutral">
-                              {task.priority}
-                            </Badge>
-                          </div>
+                  {contactTasks.slice(0, 5).map((task) => (
+                    <div key={task.Id} className="flex items-start space-x-3 p-3 bg-neutral-50 rounded-lg">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-success-50 flex items-center justify-center">
+                        <ApperIcon name="CheckSquare" className="w-4 h-4 text-success-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <h4 className={cn(
+                            "text-sm font-medium truncate",
+                            task.completed ? "line-through text-neutral-500" : "text-neutral-900"
+                          )}>
+                            {task.title}
+                          </h4>
+                          <Badge size="sm" variant={getTaskStatusColor(task)}>
+                            {getTaskStatusText(task)}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-neutral-600 mb-2 line-clamp-1">
+                          {task.description}
+                        </p>
+                        <div className="flex items-center space-x-3 text-xs text-neutral-500">
+                          <span className="flex items-center">
+                            <ApperIcon name="Calendar" className="w-3 h-3 mr-1" />
+                            {formatDate(task.dueDate)}
+                          </span>
+                          <Badge size="sm" variant="neutral">
+                            {task.priority}
+                          </Badge>
                         </div>
                       </div>
                     </div>
                   ))}
+                  {contactTasks.length > 5 && (
+                    <div className="text-center pt-2">
+                      <p className="text-xs text-neutral-500">
+                        +{contactTasks.length - 5} more activities
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

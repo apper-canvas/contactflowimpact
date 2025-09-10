@@ -8,6 +8,11 @@ class DealService {
     this.deals = [...dealsData];
   }
 
+  // Get deals by contact ID
+  async getByContactId(contactId) {
+    await delay();
+    return this.deals.filter(deal => deal.contactId === contactId);
+  }
   async getAll() {
     await delay();
     return [...this.deals].sort((a, b) => new Date(b.expectedCloseDate) - new Date(a.expectedCloseDate));

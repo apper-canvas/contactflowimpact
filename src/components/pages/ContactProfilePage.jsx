@@ -32,10 +32,11 @@ const ContactProfilePage = () => {
   const [saveLoading, setSaveLoading] = useState(false);
   const [editErrors, setEditErrors] = useState({});
   
-  // Task data for activity tab
+// Activity data for timeline
   const [contactTasks, setContactTasks] = useState([]);
+  const [contactDeals, setContactDeals] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(false);
-
+  const [loadingDeals, setLoadingDeals] = useState(false);
   useEffect(() => {
     if (id) {
       loadContact();
@@ -65,7 +66,7 @@ const ContactProfilePage = () => {
     }
   };
 
-  const loadContactTasks = async () => {
+const loadContactTasks = async () => {
     if (!contact?.Id) return;
     
     try {
@@ -79,9 +80,61 @@ const ContactProfilePage = () => {
     }
   };
 
-  useEffect(() => {
+  const loadContactDeals = async () => {
+    if (!contact?.Id) return;
+    
+    try {
+      setLoadingDeals(true);
+      const dealService = await import('@/services/api/dealService');
+      const deals = await dealService.default.getByContactId(contact.Id);
+      setContactDeals(deals);
+    } catch (error) {
+      console.error('Failed to load contact deals:', error);
+    } finally {
+      setLoadingDeals(false);
+    }
+  };
+
+  const getCombinedActivities = () => {
+    const activities = [];
+    
+    // Add tasks as activities
+    contactTasks.forEach(task => {
+      activities.push({
+        id: `task-${task.Id}`,
+        type: 'task',
+        title: task.title,
+        description: task.description,
+        date: task.completed ? task.completedDate || task.dueDate : task.dueDate,
+        status: task.completed ? 'completed' : 'pending',
+        priority: task.priority,
+        taskType: task.type,
+        icon: 'CheckSquare'
+      });
+    });
+
+    // Add deals as activities
+    contactDeals.forEach(deal => {
+      activities.push({
+        id: `deal-${deal.Id}`,
+        type: 'deal',
+        title: `Deal: ${deal.title}`,
+        description: `${deal.stage} - $${deal.amount?.toLocaleString() || '0'}`,
+        date: deal.updatedAt || deal.createdAt,
+        status: deal.stage?.toLowerCase() || 'active',
+        priority: deal.priority || 'medium',
+        icon: 'DollarSign'
+      });
+    });
+
+    // Sort by date (most recent first)
+    return activities.sort((a, b) => new Date(b.date) - new Date(a.date));
+  };
+
+useEffect(() => {
     if (activeTab === "activity" && contact) {
       loadContactTasks();
+      loadContactDeals();
     }
   }, [activeTab, contact]);
 
@@ -91,9 +144,28 @@ const ContactProfilePage = () => {
 
   const formatDate = (dateString) => {
     try {
-      return format(new Date(dateString), "MMMM d, yyyy 'at' h:mm a");
+return format(new Date(dateString), "MMMM d, yyyy 'at' h:mm a");
     } catch (error) {
       return "Invalid date";
+    }
+  };
+
+  const getActivityStatusColor = (activity) => {
+    if (activity.type === 'task') {
+      return activity.status === 'completed' ? 'success' : 'warning';
+    } else {
+      const stage = activity.status;
+      if (stage === 'won' || stage === 'closed') return 'success';
+      if (stage === 'lost') return 'error';
+      return 'primary';
+    }
+  };
+
+  const getActivityStatusText = (activity) => {
+    if (activity.type === 'task') {
+      return activity.status === 'completed' ? 'Completed' : 'Pending';
+    } else {
+      return activity.status.charAt(0).toUpperCase() + activity.status.slice(1);
     }
   };
 
@@ -529,60 +601,96 @@ const ContactProfilePage = () => {
           </div>
         )}
 
-        {/* Activity History Tab */}
+{/* Activity History Tab */}
         {activeTab === "activity" && (
           <div className="bg-white rounded-lg shadow-card">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-neutral-900">Activity History</h2>
-                <Badge variant="neutral" size="sm">
-                  {contactTasks.length} task{contactTasks.length !== 1 ? 's' : ''}
-                </Badge>
+                <h2 className="text-xl font-semibold text-neutral-900">Activity Timeline</h2>
+                <div className="flex items-center space-x-2">
+                  <Badge variant="neutral" size="sm">
+                    {contactTasks.length} task{contactTasks.length !== 1 ? 's' : ''}
+                  </Badge>
+                  <Badge variant="primary" size="sm">
+                    {contactDeals.length} deal{contactDeals.length !== 1 ? 's' : ''}
+                  </Badge>
+                </div>
               </div>
               
-              {loadingTasks ? (
+              {(loadingTasks || loadingDeals) ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
-                  <span className="ml-2 text-sm text-neutral-600">Loading tasks...</span>
+                  <span className="ml-2 text-sm text-neutral-600">Loading activities...</span>
                 </div>
-              ) : contactTasks.length === 0 ? (
+              ) : getCombinedActivities().length === 0 ? (
                 <div className="text-center py-12">
                   <ApperIcon name="Activity" className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-neutral-900 mb-2">No Activity Yet</h3>
-                  <p className="text-neutral-500">Tasks and interactions with this contact will appear here.</p>
+                  <p className="text-neutral-500">Tasks, deals, and other interactions with this contact will appear here.</p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {contactTasks.map((task) => (
-                    <div key={task.Id} className="border border-neutral-200 rounded-lg p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <h4 className={cn(
-                              "font-medium",
-                              task.completed ? "line-through text-neutral-500" : "text-neutral-900"
-                            )}>
-                              {task.title}
-                            </h4>
-                            <Badge size="sm" variant={getTaskStatusColor(task)}>
-                              {getTaskStatusText(task)}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-neutral-600 mb-3">
-                            {task.description}
-                          </p>
-                          <div className="flex items-center space-x-4 text-xs text-neutral-500">
-                            <span className="flex items-center">
-                              <ApperIcon name="Calendar" className="w-3 h-3 mr-1" />
-                              {formatDate(task.dueDate)}
-                            </span>
-                            <span className="flex items-center">
-                              <ApperIcon name="Tag" className="w-3 h-3 mr-1" />
-                              {task.type}
-                            </span>
-                            <Badge size="sm" variant="neutral">
-                              {task.priority}
-                            </Badge>
+                <div className="space-y-6">
+                  {getCombinedActivities().map((activity, index) => (
+                    <div key={activity.id} className="relative">
+                      {/* Timeline connector */}
+                      {index < getCombinedActivities().length - 1 && (
+                        <div className="absolute left-6 top-12 w-0.5 h-6 bg-neutral-200"></div>
+                      )}
+                      
+                      <div className="flex items-start space-x-4">
+                        {/* Activity Icon */}
+                        <div className={cn(
+                          "flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center",
+                          activity.type === 'task' ? "bg-success-50" : "bg-primary-50"
+                        )}>
+                          <ApperIcon 
+                            name={activity.icon} 
+                            className={cn(
+                              "w-5 h-5",
+                              activity.type === 'task' ? "text-success-600" : "text-primary-600"
+                            )} 
+                          />
+                        </div>
+                        
+                        {/* Activity Content */}
+                        <div className="flex-1 bg-neutral-50 rounded-lg p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2 mb-1">
+                                <h4 className={cn(
+                                  "font-medium text-neutral-900",
+                                  activity.type === 'task' && activity.status === 'completed' && "line-through text-neutral-500"
+                                )}>
+                                  {activity.title}
+                                </h4>
+                                <Badge size="sm" variant={getActivityStatusColor(activity)}>
+                                  {getActivityStatusText(activity)}
+                                </Badge>
+                                <Badge size="sm" variant="neutral">
+                                  {activity.type.charAt(0).toUpperCase() + activity.type.slice(1)}
+                                </Badge>
+                              </div>
+                              
+                              <p className="text-sm text-neutral-600 mb-3">
+                                {activity.description}
+                              </p>
+                              
+                              <div className="flex items-center space-x-4 text-xs text-neutral-500">
+                                <span className="flex items-center">
+                                  <ApperIcon name="Calendar" className="w-3 h-3 mr-1" />
+                                  {formatDate(activity.date)}
+                                </span>
+                                {activity.type === 'task' && activity.taskType && (
+                                  <span className="flex items-center">
+                                    <ApperIcon name="Tag" className="w-3 h-3 mr-1" />
+                                    {activity.taskType}
+                                  </span>
+                                )}
+                                <Badge size="sm" variant="neutral">
+                                  {activity.priority}
+                                </Badge>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
