@@ -1,13 +1,13 @@
-import { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import Button from "@/components/atoms/Button";
-import Card from "@/components/atoms/Card";
-import Input from "@/components/atoms/Input";
-import Label from "@/components/atoms/Label";
 import ApperIcon from "@/components/ApperIcon";
-import Loading from "@/components/ui/Loading";
 import Error from "@/components/ui/Error";
 import Empty from "@/components/ui/Empty";
+import Loading from "@/components/ui/Loading";
+import Input from "@/components/atoms/Input";
+import Card from "@/components/atoms/Card";
+import Button from "@/components/atoms/Button";
+import Label from "@/components/atoms/Label";
 import dealService from "@/services/api/dealService";
 import contactService from "@/services/api/contactService";
 
@@ -259,6 +259,7 @@ const DealsPage = () => {
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [draggedDeal, setDraggedDeal] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const loadDeals = async () => {
     try {
@@ -285,13 +286,19 @@ const DealsPage = () => {
     const newDeal = await dealService.create(dealData);
     setDeals(prev => [...prev, newDeal]);
   };
+const handleCreateDeal = async (dealData) => {
+    const newDeal = await dealService.create(dealData);
+    setDeals(prev => [...prev, newDeal]);
+  };
 
   const handleDragStart = (e, deal) => {
     setDraggedDeal(deal);
+    setIsDragging(true);
     e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragEnd = () => {
+    setIsDragging(false);
     setDraggedDeal(null);
   };
 
@@ -302,8 +309,12 @@ const DealsPage = () => {
 
   const handleDrop = async (e, targetStage) => {
     e.preventDefault();
+    setIsDragging(false);
     
-    if (!draggedDeal || draggedDeal.stage === targetStage) return;
+    if (!draggedDeal || draggedDeal.stage === targetStage) {
+      setDraggedDeal(null);
+      return;
+    }
 
     try {
       const updatedDeal = await dealService.update(draggedDeal.Id, {
@@ -317,7 +328,14 @@ const DealsPage = () => {
       toast.success(`Deal moved to ${targetStage}`);
     } catch (error) {
       toast.error(`Failed to update deal: ${error.message}`);
+    } finally {
+      setDraggedDeal(null);
     }
+  };
+const getStageTotal = (stage) => {
+    return deals
+      .filter(deal => deal.stage === stage)
+      .reduce((sum, deal) => sum + deal.value, 0);
   };
 
   const getDealsByStage = (stage) => {
@@ -333,6 +351,12 @@ const DealsPage = () => {
 
   const totalDeals = deals.length;
   const totalValue = deals.reduce((sum, deal) => sum + deal.value, 0);
+
+  // Calculate stage totals
+  const stageTotals = PIPELINE_STAGES.reduce((acc, stage) => {
+    acc[stage.id] = getStageTotal(stage.id);
+    return acc;
+  }, {});
 
   return (
     <div className="flex-1 overflow-auto">
@@ -353,6 +377,77 @@ const DealsPage = () => {
             Add Deal
           </Button>
         </div>
+
+        {/* Pipeline Value Totals */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+          {PIPELINE_STAGES.map((stage) => (
+            <Card key={stage.id} className="p-4">
+              <div className="text-sm font-medium text-neutral-600 mb-1">
+                {stage.label}
+              </div>
+              <div className="text-lg font-bold text-neutral-900">
+                ${stageTotals[stage.id].toLocaleString()}
+              </div>
+              <div className="text-xs text-neutral-500">
+                {deals.filter(deal => deal.stage === stage.id).length} deals
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Pipeline Board */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+          {PIPELINE_STAGES.map((stage) => {
+            const stageDeals = getDealsByStage(stage.id);
+            const isDropTarget = isDragging && draggedDeal?.stage !== stage.id;
+            
+            return (
+              <div
+                key={stage.id}
+                className={`bg-neutral-50 rounded-lg p-4 min-h-[600px] transition-all duration-200 ${
+                  isDropTarget 
+                    ? 'bg-primary-50 border-2 border-primary-200 border-dashed' 
+                    : 'border border-neutral-200'
+                }`}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, stage.id)}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-neutral-900 flex items-center gap-2">
+                    <span className={`w-3 h-3 rounded-full ${stage.color.split(' ')[0]}`}></span>
+                    {stage.label}
+                  </h3>
+                  <span className="text-sm text-neutral-500">
+                    {stageDeals.length}
+                  </span>
+                </div>
+                
+                <div className="space-y-3">
+                  {stageDeals.map((deal) => {
+                    const contact = getContactById(deal.contactId);
+                    return (
+                      <DealCard
+                        key={deal.Id}
+                        deal={deal}
+                        contact={contact}
+                        onDragStart={handleDragStart}
+                        onDragEnd={handleDragEnd}
+                        isDragging={draggedDeal?.Id === deal.Id}
+                      />
+                    );
+                  })}
+                  
+                  {isDropTarget && (
+                    <div className="border-2 border-primary-300 border-dashed rounded-lg p-4 text-center text-primary-600 bg-primary-25">
+                      <ApperIcon name="MoveHorizontal" size={20} className="mx-auto mb-2" />
+                      <p className="text-sm font-medium">Drop here to move to {stage.label}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+</div>
 
         {totalDeals === 0 ? (
           <Empty
