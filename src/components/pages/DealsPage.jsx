@@ -282,13 +282,15 @@ const DealsPage = () => {
     loadDeals();
   }, []);
 
-  const handleCreateDeal = async (dealData) => {
-    const newDeal = await dealService.create(dealData);
-    setDeals(prev => [...prev, newDeal]);
-  };
 const handleCreateDeal = async (dealData) => {
     const newDeal = await dealService.create(dealData);
     setDeals(prev => [...prev, newDeal]);
+  };
+
+  const getStageTotal = (stage) => {
+    return deals
+      .filter(deal => deal.stage === stage)
+      .reduce((sum, deal) => sum + deal.value, 0);
   };
 
   const handleDragStart = (e, deal) => {
@@ -331,11 +333,6 @@ const handleCreateDeal = async (dealData) => {
     } finally {
       setDraggedDeal(null);
     }
-  };
-const getStageTotal = (stage) => {
-    return deals
-      .filter(deal => deal.stage === stage)
-      .reduce((sum, deal) => sum + deal.value, 0);
   };
 
   const getDealsByStage = (stage) => {
@@ -394,60 +391,6 @@ const getStageTotal = (stage) => {
             </Card>
           ))}
         </div>
-
-        {/* Pipeline Board */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-          {PIPELINE_STAGES.map((stage) => {
-            const stageDeals = getDealsByStage(stage.id);
-            const isDropTarget = isDragging && draggedDeal?.stage !== stage.id;
-            
-            return (
-              <div
-                key={stage.id}
-                className={`bg-neutral-50 rounded-lg p-4 min-h-[600px] transition-all duration-200 ${
-                  isDropTarget 
-                    ? 'bg-primary-50 border-2 border-primary-200 border-dashed' 
-                    : 'border border-neutral-200'
-                }`}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, stage.id)}
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-neutral-900 flex items-center gap-2">
-                    <span className={`w-3 h-3 rounded-full ${stage.color.split(' ')[0]}`}></span>
-                    {stage.label}
-                  </h3>
-                  <span className="text-sm text-neutral-500">
-                    {stageDeals.length}
-                  </span>
-                </div>
-                
-                <div className="space-y-3">
-                  {stageDeals.map((deal) => {
-                    const contact = getContactById(deal.contactId);
-                    return (
-                      <DealCard
-                        key={deal.Id}
-                        deal={deal}
-                        contact={contact}
-                        onDragStart={handleDragStart}
-                        onDragEnd={handleDragEnd}
-                        isDragging={draggedDeal?.Id === deal.Id}
-                      />
-                    );
-                  })}
-                  
-                  {isDropTarget && (
-                    <div className="border-2 border-primary-300 border-dashed rounded-lg p-4 text-center text-primary-600 bg-primary-25">
-                      <ApperIcon name="MoveHorizontal" size={20} className="mx-auto mb-2" />
-                      <p className="text-sm font-medium">Drop here to move to {stage.label}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-</div>
 
         {totalDeals === 0 ? (
           <Empty
