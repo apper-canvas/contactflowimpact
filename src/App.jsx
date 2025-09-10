@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import Layout from "@/components/organisms/Layout";
 import ContactsPage from "@/components/pages/ContactsPage";
+import ContactProfilePage from "@/components/pages/ContactProfilePage";
 import DealsPage from "@/components/pages/DealsPage";
 import TasksPage from "@/components/pages/TasksPage";
 import ReportsPage from "@/components/pages/ReportsPage";
@@ -12,11 +13,12 @@ function App() {
     <BrowserRouter>
       <div className="min-h-screen bg-neutral-50">
         <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Navigate to="/contacts" replace />} />
-            <Route path="contacts" element={<ContactsPage />} />
-            <Route path="deals" element={<DealsPage />} />
-            <Route path="tasks" element={<TasksPage />} />
+<Route path="/" element={<Layout />}>
+          <Route index element={<Navigate to="/contacts" replace />} />
+          <Route path="contacts" element={<ContactsPage />} />
+          <Route path="contacts/:id" element={<ContactProfilePage />} />
+          <Route path="deals" element={<DealsPage />} />
+          <Route path="tasks" element={<TasksPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>

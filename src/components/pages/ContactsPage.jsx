@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
-import ContactList from "@/components/organisms/ContactList";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ContactModal from "@/components/organisms/ContactModal";
-import ContactDetailModal from "@/components/organisms/ContactDetailModal";
+import ContactList from "@/components/organisms/ContactList";
 
 const ContactsPage = () => {
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
+  const navigate = useNavigate();
+  const [contacts, setContacts] = useState([]);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [selectedContact, setSelectedContact] = useState(null);
   const [contactListKey, setContactListKey] = useState(0);
 
@@ -15,22 +16,21 @@ const ContactsPage = () => {
     setShowAddModal(true);
   };
 
-  const handleContactClick = (contact) => {
-    setSelectedContact(contact);
-    setShowDetailModal(true);
+const handleContactClick = (contact) => {
+    navigate(`/contacts/${contact.Id}`);
   };
 
   const handleEditContact = (contact) => {
     setSelectedContact(contact);
-    setShowDetailModal(false);
     setShowEditModal(true);
   };
 
-  const handleContactSaved = (savedContact) => {
+const handleContactSaved = (savedContact) => {
     // Refresh the contact list by updating the key
     setContactListKey(prev => prev + 1);
-    
-    // If we're editing, update the selected contact for the detail modal
+    // Close modals after saving
+    setShowAddModal(false);
+    setShowEditModal(false);
     if (showEditModal && selectedContact) {
       setSelectedContact(savedContact);
     }
@@ -45,10 +45,12 @@ const ContactsPage = () => {
   return (
     <div className="flex-1 overflow-auto">
       <div className="max-w-7xl mx-auto p-6">
-        <ContactList
+<ContactList
           key={contactListKey}
           onContactClick={handleContactClick}
           onAddContact={handleAddContact}
+          onEditContact={handleEditContact}
+          onContactDeleted={handleContactDeleted}
         />
 
         <ContactModal
@@ -62,15 +64,7 @@ const ContactsPage = () => {
           onClose={() => setShowEditModal(false)}
           contact={selectedContact}
           onContactSaved={handleContactSaved}
-        />
-
-        <ContactDetailModal
-          isOpen={showDetailModal}
-          onClose={() => setShowDetailModal(false)}
-          contact={selectedContact}
-          onContactEdit={handleEditContact}
-          onContactDeleted={handleContactDeleted}
-        />
+/>
       </div>
     </div>
   );
