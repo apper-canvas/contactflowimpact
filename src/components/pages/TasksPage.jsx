@@ -42,19 +42,8 @@ const priorities = [
     { value: "Low", label: "Low", color: "text-neutral-600 bg-neutral-100" },
     { value: "Medium", label: "Medium", color: "text-warning-600 bg-warning-100" },
     { value: "High", label: "High", color: "text-error-600 bg-error-100" }
-  ];
+];
 
-  const getTaskTypeIcon = (typeName) => {
-    const iconMap = {
-      'Call': 'Phone',
-      'Email': 'Mail', 
-      'Meeting': 'Calendar',
-      'Follow-up': 'Clock',
-      'Demo': 'Presentation',
-      'Task': 'CheckSquare'
-    };
-    return iconMap[typeName] || 'CheckSquare';
-  };
 useEffect(() => {
     loadData();
   }, []);
