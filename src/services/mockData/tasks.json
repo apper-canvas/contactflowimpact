@@ -1,0 +1,29 @@
+[
+  {
+    "Id": 1,
+    "title": "Follow up on API requirements",
+    "description": "Schedule technical discussion with John about integration specifications",
+    "contactId": 1,
+    "dueDate": "2024-02-15T10:00:00.000Z",
+    "priority": "High",
+    "completed": false
+  },
+  {
+    "Id": 2,
+    "title": "Send marketing proposal",
+    "description": "Prepare and send detailed proposal for digital marketing services",
+    "contactId": 2,
+    "dueDate": "2024-02-12T14:00:00.000Z",
+    "priority": "High",
+    "completed": true
+  },
+  {
+    "Id": 3,
+    "title": "Design consultation call",
+    "description": "Initial consultation call to discuss UX partnership opportunities",
+    "contactId": 3,
+    "dueDate": "2024-02-20T11:00:00.000Z",
+    "priority": "Medium",
+    "completed": false
+  }
+]

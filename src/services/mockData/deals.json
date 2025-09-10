@@ -1,0 +1,29 @@
+[
+  {
+    "Id": 1,
+    "title": "API Integration Project",
+    "contactId": 1,
+    "value": 75000,
+    "stage": "Proposal",
+    "probability": 70,
+    "expectedCloseDate": "2024-03-15T00:00:00.000Z"
+  },
+  {
+    "Id": 2,
+    "title": "Digital Marketing Expansion",
+    "contactId": 2,
+    "value": 120000,
+    "stage": "Negotiation",
+    "probability": 85,
+    "expectedCloseDate": "2024-04-01T00:00:00.000Z"
+  },
+  {
+    "Id": 3,
+    "title": "UX Consulting Partnership",
+    "contactId": 3,
+    "value": 200000,
+    "stage": "Discovery",
+    "probability": 50,
+    "expectedCloseDate": "2024-05-30T00:00:00.000Z"
+  }
+]
