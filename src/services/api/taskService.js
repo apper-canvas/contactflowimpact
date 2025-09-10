@@ -1,5 +1,3 @@
-import React from "react";
-import Error from "@/components/ui/Error";
 import tasksData from "@/services/mockData/tasks.json";
 
 // Simulate network delay
@@ -51,8 +49,6 @@ class TaskService {
       ...taskData,
       updatedAt: new Date().toISOString()
     };
-
-    this.tasks[index] = updatedTask;
 this.tasks[index] = updatedTask;
     return { ...updatedTask };
   }
@@ -84,8 +80,15 @@ this.tasks[index] = updatedTask;
       updatedAt: new Date().toISOString()
     };
 
-    this.tasks[index] = updatedTask;
+this.tasks[index] = updatedTask;
     return { ...updatedTask };
+  }
+
+  async getByContactId(contactId) {
+    await delay(200);
+    return [...this.tasks]
+      .filter(task => task.contactId === parseInt(contactId))
+      .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
   }
 }
 

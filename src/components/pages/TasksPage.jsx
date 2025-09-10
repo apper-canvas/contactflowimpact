@@ -52,9 +52,32 @@ const TasksPage = () => {
     { value: "High", label: "High", color: "text-error-600 bg-error-100" }
   ];
 
-  useEffect(() => {
+useEffect(() => {
     loadData();
   }, []);
+
+  // Check for overdue tasks and show notifications
+  const checkOverdueTasks = () => {
+    const now = new Date();
+    const overdueTasks = tasks.filter(task => 
+      !task.completed && new Date(task.dueDate) < now
+    );
+    
+    if (overdueTasks.length > 0) {
+      toast.warning(`You have ${overdueTasks.length} overdue task${overdueTasks.length > 1 ? 's' : ''}!`);
+    }
+  };
+
+  useEffect(() => {
+    if (tasks.length > 0) {
+      checkOverdueTasks();
+    }
+  }, [tasks]);
+
+  const isTaskOverdue = (task) => {
+    if (task.completed) return false;
+    return new Date(task.dueDate) < new Date();
+  };
 
   const loadData = async () => {
     try {
@@ -310,13 +333,14 @@ const TasksPage = () => {
                   </div>
                 ) : (
                   <div className="space-y-1">
-                    {filteredTasks.map((task) => (
+{filteredTasks.map((task) => (
                       <div
                         key={task.Id}
                         onClick={() => handleTaskSelect(task)}
                         className={cn(
                           "p-4 border-b border-neutral-100 cursor-pointer transition-colors hover:bg-neutral-50",
-                          selectedTask?.Id === task.Id && "bg-primary-50 border-primary-200"
+                          selectedTask?.Id === task.Id && "bg-primary-50 border-primary-200",
+                          isTaskOverdue(task) && "bg-red-50 border-red-200 hover:bg-red-100"
                         )}
                       >
                         <div className="flex items-start space-x-3">
@@ -324,13 +348,21 @@ const TasksPage = () => {
                             <ApperIcon name={getTaskTypeIcon(task.type)} className="w-4 h-4 text-neutral-600" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-1">
-                              <h3 className={cn(
-                                "text-sm font-medium truncate",
-                                task.completed ? "line-through text-neutral-500" : "text-neutral-900"
-                              )}>
-                                {task.title}
-                              </h3>
+<div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center space-x-2 flex-1 min-w-0">
+                                <h3 className={cn(
+                                  "text-sm font-medium truncate",
+                                  task.completed ? "line-through text-neutral-500" : "text-neutral-900",
+                                  isTaskOverdue(task) && !task.completed && "text-red-900"
+                                )}>
+                                  {task.title}
+                                </h3>
+                                {isTaskOverdue(task) && !task.completed && (
+                                  <Badge size="sm" className="bg-red-100 text-red-800">
+                                    Overdue
+                                  </Badge>
+                                )}
+                              </div>
                               <Badge
                                 size="sm"
                                 className={getPriorityColor(task.priority)}
@@ -341,8 +373,12 @@ const TasksPage = () => {
                             <p className="text-xs text-neutral-600 mb-2 line-clamp-2">
                               {task.description}
                             </p>
-                            <div className="flex items-center justify-between text-xs text-neutral-500">
-                              <span>{formatDateTime(task.dueDate)}</span>
+<div className="flex items-center justify-between text-xs">
+                              <span className={cn(
+                                isTaskOverdue(task) && !task.completed ? "text-red-600 font-medium" : "text-neutral-500"
+                              )}>
+                                {formatDateTime(task.dueDate)}
+                              </span>
                               {task.contactId && (
                                 <span className="truncate ml-2">
                                   {getContactName(task.contactId)}
