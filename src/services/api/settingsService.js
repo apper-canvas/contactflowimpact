@@ -11,12 +11,12 @@ const defaultSettings = {
       { Id: 5, name: 'Closed Won', winProbability: 100, order: 5, color: '#059669' }
     ]
   },
-  taskTypes: [
-    { Id: 1, name: 'Call', color: '#3b82f6', defaultDuration: 30 },
-    { Id: 2, name: 'Email', color: '#10b981', defaultDuration: 15 },
-    { Id: 3, name: 'Meeting', color: '#f59e0b', defaultDuration: 60 },
-    { Id: 4, name: 'Follow-up', color: '#8b5cf6', defaultDuration: 15 },
-    { Id: 5, name: 'Demo', color: '#ef4444', defaultDuration: 90 }
+taskTypes: [
+    { Id: 1, name: 'Call', color: '#3b82f6', defaultDuration: 30, priority: 'Medium' },
+    { Id: 2, name: 'Email', color: '#10b981', defaultDuration: 15, priority: 'Low' },
+    { Id: 3, name: 'Meeting', color: '#f59e0b', defaultDuration: 60, priority: 'High' },
+    { Id: 4, name: 'Follow-up', color: '#8b5cf6', defaultDuration: 15, priority: 'Medium' },
+    { Id: 5, name: 'Demo', color: '#ef4444', defaultDuration: 90, priority: 'High' }
   ],
   contactFields: [
     { Id: 1, name: 'company', label: 'Company', type: 'text', required: true, visible: true },
@@ -98,17 +98,42 @@ class SettingsService {
     return true;
   }
 
-  // Task Types Settings
+// Task Types Settings
   async getTaskTypes() {
     await delay();
     return [...this.settings.taskTypes];
   }
-
-  async updateTaskTypes(taskTypes) {
+async updateTaskTypes(taskTypes) {
     await delay();
     this.settings.taskTypes = taskTypes;
     this.saveSettings();
     return this.settings.taskTypes;
+  }
+async addTaskType(taskTypeData) {
+    await delay();
+    const maxId = Math.max(...this.settings.taskTypes.map(t => t.Id), 0);
+    const newTaskType = {
+      Id: maxId + 1,
+      name: taskTypeData.name || 'New Task Type',
+      defaultDuration: taskTypeData.defaultDuration || 30,
+      priority: taskTypeData.priority || 'Medium',
+      color: taskTypeData.color || '#3b82f6'
+    };
+    
+    this.settings.taskTypes.push(newTaskType);
+    this.saveSettings();
+    return newTaskType;
+  }
+  async deleteTaskType(id) {
+    await delay();
+    const taskTypeExists = this.settings.taskTypes.find(t => t.Id === id);
+    if (!taskTypeExists) {
+      throw new Error('Task type not found');
+    }
+    
+    this.settings.taskTypes = this.settings.taskTypes.filter(t => t.Id !== id);
+    this.saveSettings();
+    return true;
   }
 
   // Contact Fields Settings

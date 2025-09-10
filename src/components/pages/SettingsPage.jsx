@@ -115,7 +115,7 @@ const SettingsPage = () => {
     }
   };
 
-  const handleTaskTypeUpdate = async (taskId, field, value) => {
+const handleTaskTypeUpdate = async (taskId, field, value) => {
     const updatedTypes = taskTypes.map(type =>
       type.Id === taskId ? { ...type, [field]: value } : type
     );
@@ -127,6 +127,33 @@ const SettingsPage = () => {
     } catch (error) {
       toast.error('Failed to update task type');
       loadSettings();
+    }
+  };
+
+  const handleAddTaskType = async () => {
+    try {
+      const newTaskType = await settingsService.addTaskType({
+        name: 'New Task Type',
+        defaultDuration: 30,
+        priority: 'Medium',
+        color: '#3b82f6'
+      });
+      setTaskTypes([...taskTypes, newTaskType]);
+      toast.success('Task type added');
+    } catch (error) {
+      toast.error('Failed to add task type');
+    }
+  };
+
+  const handleDeleteTaskType = async (taskId) => {
+    if (!confirm('Are you sure you want to delete this task type? This may affect existing tasks.')) return;
+
+    try {
+      await settingsService.deleteTaskType(taskId);
+      setTaskTypes(taskTypes.filter(t => t.Id !== taskId));
+      toast.success('Task type deleted');
+    } catch (error) {
+      toast.error('Failed to delete task type');
     }
   };
 
@@ -295,23 +322,30 @@ const SettingsPage = () => {
             </Card>
           )}
 
-          {activeTab === 'tasks' && (
+{activeTab === 'tasks' && (
             <Card className="p-6">
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold text-neutral-900">Task Types</h2>
-                <p className="text-sm text-neutral-600 mt-1">Configure task categories and default durations</p>
+              <div className="mb-6 flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-semibold text-neutral-900">Task Types</h2>
+                  <p className="text-sm text-neutral-600 mt-1">Configure task categories with default durations and priorities</p>
+                </div>
+                <Button onClick={handleAddTaskType} className="flex items-center gap-2">
+                  <ApperIcon name="Plus" size={16} />
+                  Add Task Type
+                </Button>
               </div>
               
               <div className="space-y-4">
                 {taskTypes.map((type) => (
                   <div key={type.Id} className="flex items-center gap-4 p-4 bg-neutral-50 rounded-lg">
-                    <div className="flex-1 grid grid-cols-3 gap-4">
+                    <div className="flex-1 grid grid-cols-4 gap-4">
                       <div>
                         <Label>Task Type</Label>
                         <Input
                           value={type.name}
                           onChange={(e) => handleTaskTypeUpdate(type.Id, 'name', e.target.value)}
                           className="mt-1"
+                          placeholder="Enter task type name"
                         />
                       </div>
                       
@@ -320,10 +354,25 @@ const SettingsPage = () => {
                         <Input
                           type="number"
                           min="1"
+                          max="480"
                           value={type.defaultDuration}
-                          onChange={(e) => handleTaskTypeUpdate(type.Id, 'defaultDuration', parseInt(e.target.value))}
+                          onChange={(e) => handleTaskTypeUpdate(type.Id, 'defaultDuration', parseInt(e.target.value) || 15)}
                           className="mt-1"
+                          placeholder="15"
                         />
+                      </div>
+                      
+                      <div>
+                        <Label>Priority</Label>
+                        <select
+                          value={type.priority || 'Medium'}
+                          onChange={(e) => handleTaskTypeUpdate(type.Id, 'priority', e.target.value)}
+                          className="mt-1 w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        >
+                          <option value="Low">Low</option>
+                          <option value="Medium">Medium</option>
+                          <option value="High">High</option>
+                        </select>
                       </div>
                       
                       <div>
@@ -332,12 +381,29 @@ const SettingsPage = () => {
                           type="color"
                           value={type.color}
                           onChange={(e) => handleTaskTypeUpdate(type.Id, 'color', e.target.value)}
-                          className="mt-1 w-full h-10 rounded border"
+                          className="mt-1 w-full h-10 rounded border border-neutral-300 cursor-pointer"
                         />
                       </div>
                     </div>
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteTaskType(type.Id)}
+                      className="text-error-600 hover:text-error-700 hover:bg-error-50 p-2"
+                    >
+                      <ApperIcon name="Trash2" size={16} />
+                    </Button>
                   </div>
                 ))}
+                
+                {taskTypes.length === 0 && (
+                  <div className="text-center py-8 text-neutral-500">
+                    <ApperIcon name="CheckSquare" size={32} className="mx-auto mb-2 opacity-50" />
+                    <p>No custom task types configured</p>
+                    <p className="text-sm">Click "Add Task Type" to create your first custom task type</p>
+                  </div>
+                )}
               </div>
             </Card>
           )}

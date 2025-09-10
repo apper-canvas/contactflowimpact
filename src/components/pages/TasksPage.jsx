@@ -1,23 +1,24 @@
-import { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import Button from "@/components/atoms/Button";
-import Input from "@/components/atoms/Input";
-import Label from "@/components/atoms/Label";
-import Badge from "@/components/atoms/Badge";
+import { format } from "date-fns";
 import ApperIcon from "@/components/ApperIcon";
-import Loading from "@/components/ui/Loading";
 import Error from "@/components/ui/Error";
 import Empty from "@/components/ui/Empty";
+import Loading from "@/components/ui/Loading";
+import Input from "@/components/atoms/Input";
+import Badge from "@/components/atoms/Badge";
+import Button from "@/components/atoms/Button";
+import Label from "@/components/atoms/Label";
 import taskService from "@/services/api/taskService";
-import contactService from "@/services/api/contactService";
 import dealService from "@/services/api/dealService";
+import settingsService from "@/services/api/settingsService";
+import contactService from "@/services/api/contactService";
 import { cn } from "@/utils/cn";
-import { format } from "date-fns";
-
 const TasksPage = () => {
-  const [tasks, setTasks] = useState([]);
+const [tasks, setTasks] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [deals, setDeals] = useState([]);
+  const [taskTypes, setTaskTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -26,9 +27,8 @@ const TasksPage = () => {
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterPriority, setFilterPriority] = useState("all");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [formData, setFormData] = useState({
-    type: "Call",
+type: "",
     title: "",
     description: "",
     dueDate: "",
@@ -38,20 +38,23 @@ const TasksPage = () => {
     priority: "Medium"
   });
 
-  const taskTypes = [
-    { value: "Call", label: "Call", icon: "Phone" },
-    { value: "Email", label: "Email", icon: "Mail" },
-    { value: "Meeting", label: "Meeting", icon: "Calendar" },
-    { value: "Follow-up", label: "Follow-up", icon: "Clock" },
-    { value: "Custom", label: "Custom", icon: "CheckSquare" }
-  ];
-
-  const priorities = [
+const priorities = [
     { value: "Low", label: "Low", color: "text-neutral-600 bg-neutral-100" },
     { value: "Medium", label: "Medium", color: "text-warning-600 bg-warning-100" },
     { value: "High", label: "High", color: "text-error-600 bg-error-100" }
   ];
 
+  const getTaskTypeIcon = (typeName) => {
+    const iconMap = {
+      'Call': 'Phone',
+      'Email': 'Mail', 
+      'Meeting': 'Calendar',
+      'Follow-up': 'Clock',
+      'Demo': 'Presentation',
+      'Task': 'CheckSquare'
+    };
+    return iconMap[typeName] || 'CheckSquare';
+  };
 useEffect(() => {
     loadData();
   }, []);
@@ -79,22 +82,30 @@ useEffect(() => {
     return new Date(task.dueDate) < new Date();
   };
 
-  const loadData = async () => {
+const loadData = async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
-      setError(null);
-      
-      const [tasksData, contactsData, dealsData] = await Promise.all([
+      const [tasksData, contactsData, dealsData, taskTypesData] = await Promise.all([
         taskService.getAll(),
         contactService.getAll(),
-        dealService.getAll()
+        dealService.getAll(),
+        settingsService.getTaskTypes()
       ]);
       
       setTasks(tasksData);
       setContacts(contactsData);
       setDeals(dealsData);
+      setTaskTypes(taskTypesData);
+      
+      // Set default task type if available and form is empty
+      if (taskTypesData.length > 0 && !formData.type) {
+        setFormData(prev => ({ ...prev, type: taskTypesData[0].name }));
+      }
     } catch (err) {
       setError(err.message);
+      toast.error('Failed to load data');
     } finally {
       setLoading(false);
     }
@@ -150,7 +161,7 @@ useEffect(() => {
     setSelectedTask(null);
     setShowForm(true);
     setFormData({
-      type: "Call",
+type: taskTypes.length > 0 ? taskTypes[0].name : "",
       title: "",
       description: "",
       dueDate: "",
@@ -409,16 +420,17 @@ useEffect(() => {
                   <form onSubmit={handleFormSubmit} className="p-6 space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label required>Task Type</Label>
+<Label required>Task Type</Label>
                         <select
                           value={formData.type}
                           onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
                           className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                           required
                         >
+                          <option value="">Select task type</option>
                           {taskTypes.map(type => (
-                            <option key={type.value} value={type.value}>
-                              {type.label}
+                            <option key={type.Id} value={type.name}>
+                              {type.name}
                             </option>
                           ))}
                         </select>
@@ -572,7 +584,7 @@ useEffect(() => {
                   </div>
                   
                   <div className="p-6 space-y-6">
-                    <div className="flex items-start space-x-4">
+<div className="flex items-start space-x-4">
                       <div className="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center">
                         <ApperIcon name={getTaskTypeIcon(selectedTask.type)} className="w-6 h-6 text-primary-600" />
                       </div>
