@@ -16,10 +16,9 @@ const Sidebar = ({ className }) => {
       badge: null
     },
     { 
-      to: "/deals", 
+to: "/deals", 
       icon: "TrendingUp", 
-      label: "Deals",
-      badge: "Soon"
+      label: "Deals"
     },
     { 
       to: "/tasks", 

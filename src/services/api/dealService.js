@@ -22,18 +22,37 @@ class DealService {
     return { ...deal };
   }
 
-  async create(dealData) {
+async create(dealData) {
     await delay(400);
     
     const newDeal = {
       Id: Math.max(...this.deals.map(d => d.Id), 0) + 1,
       ...dealData,
+      stage: dealData.stage || 'Lead',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
     this.deals.push(newDeal);
     return { ...newDeal };
+  }
+
+  async updateStage(id, stage) {
+    await delay(200);
+    
+    const index = this.deals.findIndex(deal => deal.Id === parseInt(id));
+    if (index === -1) {
+      throw new Error("Deal not found");
+    }
+
+    const updatedDeal = {
+      ...this.deals[index],
+      stage,
+      updatedAt: new Date().toISOString()
+    };
+
+    this.deals[index] = updatedDeal;
+    return { ...updatedDeal };
   }
 
   async update(id, dealData) {

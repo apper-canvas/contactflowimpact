@@ -1,29 +1,62 @@
 [
   {
-    "Id": 1,
+"Id": 1,
     "title": "API Integration Project",
     "contactId": 1,
     "value": 75000,
     "stage": "Proposal",
     "probability": 70,
-    "expectedCloseDate": "2024-03-15T00:00:00.000Z"
+    "expectedCloseDate": "2024-03-15T00:00:00.000Z",
+    "notes": "Comprehensive API integration for customer data synchronization",
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "updatedAt": "2024-01-20T14:20:00.000Z"
   },
   {
-    "Id": 2,
+"Id": 2,
     "title": "Digital Marketing Expansion",
     "contactId": 2,
     "value": 120000,
     "stage": "Negotiation",
     "probability": 85,
-    "expectedCloseDate": "2024-04-01T00:00:00.000Z"
+    "expectedCloseDate": "2024-04-01T00:00:00.000Z",
+    "notes": "Multi-channel digital marketing campaign expansion",
+    "createdAt": "2024-01-18T09:15:00.000Z",
+    "updatedAt": "2024-01-25T11:45:00.000Z"
   },
   {
-    "Id": 3,
+"Id": 3,
     "title": "UX Consulting Partnership",
     "contactId": 3,
     "value": 200000,
-    "stage": "Discovery",
+    "stage": "Lead",
     "probability": 50,
-    "expectedCloseDate": "2024-05-30T00:00:00.000Z"
+    "expectedCloseDate": "2024-05-30T00:00:00.000Z",
+    "notes": "Long-term UX consulting partnership for product redesign",
+    "createdAt": "2024-01-22T16:00:00.000Z",
+    "updatedAt": "2024-01-22T16:00:00.000Z"
+  },
+  {
+    "Id": 4,
+    "title": "E-commerce Platform Migration",
+    "contactId": 1,
+    "value": 95000,
+    "stage": "Qualified",
+    "probability": 75,
+    "expectedCloseDate": "2024-04-15T00:00:00.000Z",
+    "notes": "Migration from legacy system to modern e-commerce platform",
+    "createdAt": "2024-01-25T13:30:00.000Z",
+    "updatedAt": "2024-01-28T10:15:00.000Z"
+  },
+  {
+    "Id": 5,
+    "title": "Mobile App Development",
+    "contactId": 2,
+    "value": 180000,
+    "stage": "Closed",
+    "probability": 100,
+    "expectedCloseDate": "2024-03-01T00:00:00.000Z",
+    "notes": "Custom mobile application for iOS and Android platforms",
+    "createdAt": "2024-01-10T08:45:00.000Z",
+    "updatedAt": "2024-02-15T14:30:00.000Z"
   }
 ]
