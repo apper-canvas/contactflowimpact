@@ -22,9 +22,9 @@ to: "/deals",
     },
     { 
       to: "/tasks", 
-      icon: "CheckSquare", 
+icon: "CheckSquare", 
       label: "Tasks",
-      badge: "Soon"
+      badge: null
     },
     { 
       to: "/reports", 

@@ -1,3 +1,5 @@
+import React from "react";
+import Error from "@/components/ui/Error";
 import tasksData from "@/services/mockData/tasks.json";
 
 // Simulate network delay
@@ -51,6 +53,7 @@ class TaskService {
     };
 
     this.tasks[index] = updatedTask;
+this.tasks[index] = updatedTask;
     return { ...updatedTask };
   }
 
@@ -65,6 +68,24 @@ class TaskService {
     const deletedTask = { ...this.tasks[index] };
     this.tasks.splice(index, 1);
     return deletedTask;
+  }
+
+  async markComplete(id, data) {
+    await delay(200);
+    
+    const index = this.tasks.findIndex(task => task.Id === parseInt(id));
+    if (index === -1) {
+      throw new Error("Task not found");
+    }
+
+    const updatedTask = {
+      ...this.tasks[index],
+      ...data,
+      updatedAt: new Date().toISOString()
+    };
+
+    this.tasks[index] = updatedTask;
+    return { ...updatedTask };
   }
 }
 
