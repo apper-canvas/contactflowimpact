@@ -82,13 +82,19 @@ class DashboardService {
   async getPipelineData() {
     await delay(150);
     
-    const stages = ['Lead', 'Qualified', 'Proposal', 'Negotiation', 'Closed Won'];
+// Import settings service dynamically to get current pipeline stages
+    const settingsService = await import('./settingsService.js').then(m => m.default);
+    const stages = settingsService.getPipelineStages();
+    
     const pipelineData = stages.map(stage => {
       const stageDeals = this.deals.filter(deal => deal.stage === stage);
+      const stageConfig = settingsService.getStageByName(stage);
       return {
         stage,
         count: stageDeals.length,
-        value: stageDeals.reduce((sum, deal) => sum + (deal.value || 0), 0)
+        value: stageDeals.reduce((sum, deal) => sum + (deal.value || 0), 0),
+        winProbability: stageConfig?.winProbability || 0,
+        color: stageConfig?.color || '#64748b'
       };
     });
 

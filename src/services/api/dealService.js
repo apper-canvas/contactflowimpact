@@ -8,11 +8,22 @@ class DealService {
     this.deals = [...dealsData];
   }
 
+  async validateStage(stage) {
+    try {
+      const settingsService = await import('./settingsService.js').then(m => m.default);
+      const validStages = settingsService.getPipelineStages();
+      return validStages.includes(stage) ? stage : validStages[0] || 'Lead';
+    } catch (error) {
+      return stage; // Fallback to provided stage if settings service unavailable
+    }
+  }
+
   // Get deals by contact ID
   async getByContactId(contactId) {
     await delay();
     return this.deals.filter(deal => deal.contactId === contactId);
   }
+
   async getAll() {
     await delay();
     return [...this.deals].sort((a, b) => new Date(b.expectedCloseDate) - new Date(a.expectedCloseDate));
@@ -27,13 +38,13 @@ class DealService {
     return { ...deal };
   }
 
-async create(dealData) {
+  async create(dealData) {
     await delay(400);
     
     const newDeal = {
       Id: Math.max(...this.deals.map(d => d.Id), 0) + 1,
       ...dealData,
-      stage: dealData.stage || 'Lead',
+      stage: await this.validateStage(dealData.stage || 'Lead'),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -52,7 +63,7 @@ async create(dealData) {
 
     const updatedDeal = {
       ...this.deals[index],
-      stage,
+      stage: await this.validateStage(stage),
       updatedAt: new Date().toISOString()
     };
 
