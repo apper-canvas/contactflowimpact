@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
 import NavigationItem from "@/components/molecules/NavigationItem";
 import ApperIcon from "@/components/ApperIcon";
 import { cn } from "@/utils/cn";
+import { AuthContext } from "@/App";
 
 const Sidebar = ({ className }) => {
   const location = useLocation();
@@ -99,9 +101,6 @@ to: "/reports",
 
 // User Section Component with Authentication
 function UserSection() {
-  const { useSelector } = require('react-redux');
-  const { useContext } = require('react');
-  const { AuthContext } = require('../../App');
   
   const userState = useSelector((state) => state.user);
   const { logout } = useContext(AuthContext);
