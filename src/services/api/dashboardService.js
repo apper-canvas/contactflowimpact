@@ -1,6 +1,3 @@
-import contactsData from "@/services/mockData/contacts.json";
-import dealsData from "@/services/mockData/deals.json";
-import tasksData from "@/services/mockData/tasks.json";
 import { format, startOfMonth, endOfMonth, subMonths, isWithinInterval } from "date-fns";
 
 function delay(ms = 300) {
@@ -9,13 +6,34 @@ function delay(ms = 300) {
 
 class DashboardService {
   constructor() {
-    this.contacts = [...contactsData];
-    this.deals = [...dealsData];
-    this.tasks = [...tasksData];
+    this.contactService = null;
+    this.dealService = null;
+    this.taskService = null;
+  }
+
+  async getServices() {
+    if (!this.contactService) {
+      const contactServiceModule = await import('./contactService.js');
+      const dealServiceModule = await import('./dealService.js');
+      const taskServiceModule = await import('./taskService.js');
+      
+      this.contactService = contactServiceModule.default;
+      this.dealService = dealServiceModule.default;
+      this.taskService = taskServiceModule.default;
+    }
+    
+    return {
+      contacts: this.contactService,
+      deals: this.dealService,
+      tasks: this.taskService
+    };
   }
 
   async getMetrics(timeRange = 'thisMonth') {
     await delay(200);
+    
+    const { deals } = await this.getServices();
+    const allDeals = await deals.getAll();
     
     const now = new Date();
     const currentMonth = {
@@ -28,37 +46,37 @@ class DashboardService {
     };
 
     // Filter deals by time range
-    const currentDeals = this.deals.filter(deal => {
-      const dealDate = new Date(deal.updatedAt);
+    const currentDeals = allDeals.filter(deal => {
+      const dealDate = new Date(deal.updated_at_c || deal.ModifiedOn);
       return isWithinInterval(dealDate, currentMonth);
     });
 
-    const lastMonthDeals = this.deals.filter(deal => {
-      const dealDate = new Date(deal.updatedAt);
+    const lastMonthDeals = allDeals.filter(deal => {
+      const dealDate = new Date(deal.updated_at_c || deal.ModifiedOn);
       return isWithinInterval(dealDate, lastMonth);
     });
 
     // Calculate metrics
-    const totalPipelineValue = this.deals
-      .filter(deal => deal.stage !== 'Closed Won' && deal.stage !== 'Closed Lost')
-      .reduce((sum, deal) => sum + (deal.value || 0), 0);
+    const totalPipelineValue = allDeals
+      .filter(deal => deal.stage_c !== 'Closed Won' && deal.stage_c !== 'Closed Lost')
+      .reduce((sum, deal) => sum + (deal.value_c || 0), 0);
 
-    const closedDealsThisMonth = currentDeals.filter(deal => deal.stage === 'Closed Won');
-    const closedDealsLastMonth = lastMonthDeals.filter(deal => deal.stage === 'Closed Won');
+    const closedDealsThisMonth = currentDeals.filter(deal => deal.stage_c === 'Closed Won');
+    const closedDealsLastMonth = lastMonthDeals.filter(deal => deal.stage_c === 'Closed Won');
 
-    const revenueThisMonth = closedDealsThisMonth.reduce((sum, deal) => sum + (deal.value || 0), 0);
-    const revenueLastMonth = closedDealsLastMonth.reduce((sum, deal) => sum + (deal.value || 0), 0);
+    const revenueThisMonth = closedDealsThisMonth.reduce((sum, deal) => sum + (deal.value_c || 0), 0);
+    const revenueLastMonth = closedDealsLastMonth.reduce((sum, deal) => sum + (deal.value_c || 0), 0);
 
     const averageDealSize = closedDealsThisMonth.length > 0 
       ? revenueThisMonth / closedDealsThisMonth.length 
       : 0;
 
-    const totalDeals = this.deals.filter(deal => deal.stage !== 'Closed Lost').length;
-    const wonDeals = this.deals.filter(deal => deal.stage === 'Closed Won').length;
+    const totalDeals = allDeals.filter(deal => deal.stage_c !== 'Closed Lost').length;
+    const wonDeals = allDeals.filter(deal => deal.stage_c === 'Closed Won').length;
     const conversionRate = totalDeals > 0 ? (wonDeals / totalDeals) * 100 : 0;
 
     // Calculate growth percentages
-    const revenueGrowth = lastMonth === 0 ? 0 : 
+    const revenueGrowth = revenueLastMonth === 0 ? 0 : 
       ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100;
     
     const dealsGrowth = closedDealsLastMonth.length === 0 ? 0 :
@@ -82,17 +100,20 @@ class DashboardService {
   async getPipelineData() {
     await delay(150);
     
-// Import settings service dynamically to get current pipeline stages
+    const { deals } = await this.getServices();
+    const allDeals = await deals.getAll();
+    
+    // Import settings service dynamically to get current pipeline stages
     const settingsService = await import('./settingsService.js').then(m => m.default);
     const stages = settingsService.getPipelineStages();
     
     const pipelineData = stages.map(stage => {
-      const stageDeals = this.deals.filter(deal => deal.stage === stage);
+      const stageDeals = allDeals.filter(deal => deal.stage_c === stage);
       const stageConfig = settingsService.getStageByName(stage);
       return {
         stage,
         count: stageDeals.length,
-        value: stageDeals.reduce((sum, deal) => sum + (deal.value || 0), 0),
+        value: stageDeals.reduce((sum, deal) => sum + (deal.value_c || 0), 0),
         winProbability: stageConfig?.winProbability || 0,
         color: stageConfig?.color || '#64748b'
       };
@@ -104,18 +125,21 @@ class DashboardService {
   async getActivitySummary() {
     await delay(100);
     
+    const { tasks } = await this.getServices();
+    const allTasks = await tasks.getAll();
+    
     const now = new Date();
     const weekStart = new Date(now);
     weekStart.setDate(now.getDate() - 7);
     
-    const weekTasks = this.tasks.filter(task => {
-      const taskDate = new Date(task.updatedAt);
+    const weekTasks = allTasks.filter(task => {
+      const taskDate = new Date(task.updated_at_c || task.ModifiedOn);
       return taskDate >= weekStart;
     });
 
-    const completedTasks = weekTasks.filter(task => task.status === 'Completed').length;
-    const callTasks = weekTasks.filter(task => task.type === 'Call').length;
-    const emailTasks = weekTasks.filter(task => task.type === 'Email').length;
+    const completedTasks = weekTasks.filter(task => task.completed_c === true).length;
+    const callTasks = weekTasks.filter(task => task.type_c === 'Call').length;
+    const emailTasks = weekTasks.filter(task => task.type_c === 'Email').length;
 
     return {
       tasksCompleted: completedTasks,
@@ -128,6 +152,9 @@ class DashboardService {
   async getRevenueTrends() {
     await delay(200);
     
+    const { deals } = await this.getServices();
+    const allDeals = await deals.getAll();
+    
     const months = [];
     const revenue = [];
     
@@ -136,13 +163,13 @@ class DashboardService {
       const monthStart = startOfMonth(date);
       const monthEnd = endOfMonth(date);
       
-      const monthDeals = this.deals.filter(deal => {
-        if (deal.stage !== 'Closed Won') return false;
-        const dealDate = new Date(deal.updatedAt);
+      const monthDeals = allDeals.filter(deal => {
+        if (deal.stage_c !== 'Closed Won') return false;
+        const dealDate = new Date(deal.updated_at_c || deal.ModifiedOn);
         return isWithinInterval(dealDate, { start: monthStart, end: monthEnd });
       });
       
-      const monthRevenue = monthDeals.reduce((sum, deal) => sum + (deal.value || 0), 0);
+      const monthRevenue = monthDeals.reduce((sum, deal) => sum + (deal.value_c || 0), 0);
       
       months.push(format(date, 'MMM'));
       revenue.push(monthRevenue);
@@ -154,25 +181,32 @@ class DashboardService {
   async getTopPerformers() {
     await delay(150);
     
+    const { contacts, deals, tasks } = await this.getServices();
+    const allContacts = await contacts.getAll();
+    const allDeals = await deals.getAll();
+    const allTasks = await tasks.getAll();
+    
     // Top contacts by deal value
     const contactDeals = {};
-    this.deals.forEach(deal => {
-      if (deal.contactId && deal.stage === 'Closed Won') {
-        if (!contactDeals[deal.contactId]) {
-          contactDeals[deal.contactId] = { totalValue: 0, dealCount: 0 };
+    allDeals.forEach(deal => {
+      if (deal.contact_id_c && deal.stage_c === 'Closed Won') {
+        const contactId = deal.contact_id_c?.Id || deal.contact_id_c;
+        if (!contactDeals[contactId]) {
+          contactDeals[contactId] = { totalValue: 0, dealCount: 0 };
         }
-        contactDeals[deal.contactId].totalValue += deal.value || 0;
-        contactDeals[deal.contactId].dealCount += 1;
+        contactDeals[contactId].totalValue += deal.value_c || 0;
+        contactDeals[contactId].dealCount += 1;
       }
     });
 
     const topContacts = Object.entries(contactDeals)
       .map(([contactId, data]) => {
-        const contact = this.contacts.find(c => c.Id === parseInt(contactId));
+        const contact = allContacts.find(c => c.Id === parseInt(contactId));
+        const name = contact ? `${contact.first_name_c || ''} ${contact.last_name_c || ''}`.trim() : 'Unknown Contact';
         return {
           id: parseInt(contactId),
-          name: contact ? contact.name : 'Unknown Contact',
-          company: contact ? contact.company : '',
+          name: name || 'Unknown Contact',
+          company: contact ? contact.company_c : '',
           totalValue: data.totalValue,
           dealCount: data.dealCount
         };
@@ -182,19 +216,21 @@ class DashboardService {
 
     // Most active prospects (by task count)
     const contactTasks = {};
-    this.tasks.forEach(task => {
-      if (task.contactId) {
-        contactTasks[task.contactId] = (contactTasks[task.contactId] || 0) + 1;
+    allTasks.forEach(task => {
+      if (task.contact_id_c) {
+        const contactId = task.contact_id_c?.Id || task.contact_id_c;
+        contactTasks[contactId] = (contactTasks[contactId] || 0) + 1;
       }
     });
 
     const activeProspects = Object.entries(contactTasks)
       .map(([contactId, taskCount]) => {
-        const contact = this.contacts.find(c => c.Id === parseInt(contactId));
+        const contact = allContacts.find(c => c.Id === parseInt(contactId));
+        const name = contact ? `${contact.first_name_c || ''} ${contact.last_name_c || ''}`.trim() : 'Unknown Contact';
         return {
           id: parseInt(contactId),
-          name: contact ? contact.name : 'Unknown Contact',
-          company: contact ? contact.company : '',
+          name: name || 'Unknown Contact',
+          company: contact ? contact.company_c : '',
           taskCount
         };
       })

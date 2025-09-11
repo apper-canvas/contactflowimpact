@@ -1,11 +1,11 @@
-import dealsData from "@/services/mockData/deals.json";
-
-// Simulate network delay
-const delay = (ms = 300) => new Promise(resolve => setTimeout(resolve, ms));
-
 class DealService {
   constructor() {
-    this.deals = [...dealsData];
+    const { ApperClient } = window.ApperSDK;
+    this.apperClient = new ApperClient({
+      apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+      apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+    });
+    this.tableName = 'deal_c';
   }
 
   async validateStage(stage) {
@@ -18,88 +18,250 @@ class DealService {
     }
   }
 
-  // Get deals by contact ID
   async getByContactId(contactId) {
-    await delay();
-    return this.deals.filter(deal => deal.contactId === contactId);
+    try {
+      const params = {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "title_c"}},
+          {"field": {"Name": "value_c"}},
+          {"field": {"Name": "stage_c"}},
+          {"field": {"Name": "probability_c"}},
+          {"field": {"Name": "expected_close_date_c"}},
+          {"field": {"Name": "notes_c"}},
+          {"field": {"Name": "created_at_c"}},
+          {"field": {"Name": "updated_at_c"}},
+          {"field": {"Name": "contact_id_c"}}
+        ],
+        where: [{"FieldName": "contact_id_c", "Operator": "EqualTo", "Values": [parseInt(contactId)]}],
+        orderBy: [{"fieldName": "expected_close_date_c", "sorttype": "DESC"}],
+        pagingInfo: {"limit": 100, "offset": 0}
+      };
+      
+      const response = await this.apperClient.fetchRecords(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      return response.data || [];
+    } catch (error) {
+      console.error("Error fetching deals by contact:", error?.response?.data?.message || error);
+      throw error;
+    }
   }
 
   async getAll() {
-    await delay();
-    return [...this.deals].sort((a, b) => new Date(b.expectedCloseDate) - new Date(a.expectedCloseDate));
+    try {
+      const params = {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "title_c"}},
+          {"field": {"Name": "value_c"}},
+          {"field": {"Name": "stage_c"}},
+          {"field": {"Name": "probability_c"}},
+          {"field": {"Name": "expected_close_date_c"}},
+          {"field": {"Name": "notes_c"}},
+          {"field": {"Name": "created_at_c"}},
+          {"field": {"Name": "updated_at_c"}},
+          {"field": {"Name": "contact_id_c"}}
+        ],
+        orderBy: [{"fieldName": "expected_close_date_c", "sorttype": "DESC"}],
+        pagingInfo: {"limit": 100, "offset": 0}
+      };
+      
+      const response = await this.apperClient.fetchRecords(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      return response.data || [];
+    } catch (error) {
+      console.error("Error fetching deals:", error?.response?.data?.message || error);
+      throw error;
+    }
   }
 
   async getById(id) {
-    await delay(200);
-    const deal = this.deals.find(deal => deal.Id === parseInt(id));
-    if (!deal) {
-      throw new Error("Deal not found");
+    try {
+      const params = {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "title_c"}},
+          {"field": {"Name": "value_c"}},
+          {"field": {"Name": "stage_c"}},
+          {"field": {"Name": "probability_c"}},
+          {"field": {"Name": "expected_close_date_c"}},
+          {"field": {"Name": "notes_c"}},
+          {"field": {"Name": "created_at_c"}},
+          {"field": {"Name": "updated_at_c"}},
+          {"field": {"Name": "contact_id_c"}}
+        ]
+      };
+      
+      const response = await this.apperClient.getRecordById(this.tableName, parseInt(id), params);
+      
+      if (!response.data) {
+        throw new Error("Deal not found");
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching deal ${id}:`, error?.response?.data?.message || error);
+      throw error;
     }
-    return { ...deal };
   }
 
   async create(dealData) {
-    await delay(400);
-    
-    const newDeal = {
-      Id: Math.max(...this.deals.map(d => d.Id), 0) + 1,
-      ...dealData,
-      stage: await this.validateStage(dealData.stage || 'Lead'),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    this.deals.push(newDeal);
-    return { ...newDeal };
+    try {
+      const params = {
+        records: [{
+          Name: dealData.title_c || dealData.Name,
+          title_c: dealData.title_c,
+          value_c: parseFloat(dealData.value_c) || 0,
+          stage_c: await this.validateStage(dealData.stage_c || 'Lead'),
+          probability_c: parseInt(dealData.probability_c) || 0,
+          expected_close_date_c: dealData.expected_close_date_c ? new Date(dealData.expected_close_date_c).toISOString() : null,
+          notes_c: dealData.notes_c?.trim() || "",
+          contact_id_c: parseInt(dealData.contact_id_c),
+          created_at_c: new Date().toISOString(),
+          updated_at_c: new Date().toISOString()
+        }]
+      };
+      
+      const response = await this.apperClient.createRecord(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      if (response.results) {
+        const successful = response.results.filter(r => r.success);
+        const failed = response.results.filter(r => !r.success);
+        
+        if (failed.length > 0) {
+          console.error(`Failed to create deal:`, failed);
+          const errorMessage = failed[0].errors?.[0] || failed[0].message || 'Creation failed';
+          throw new Error(errorMessage);
+        }
+        
+        return successful[0]?.data;
+      }
+    } catch (error) {
+      console.error("Error creating deal:", error?.response?.data?.message || error);
+      throw error;
+    }
   }
 
   async updateStage(id, stage) {
-    await delay(200);
-    
-    const index = this.deals.findIndex(deal => deal.Id === parseInt(id));
-    if (index === -1) {
-      throw new Error("Deal not found");
+    try {
+      const params = {
+        records: [{
+          Id: parseInt(id),
+          stage_c: await this.validateStage(stage),
+          updated_at_c: new Date().toISOString()
+        }]
+      };
+      
+      const response = await this.apperClient.updateRecord(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      if (response.results) {
+        const successful = response.results.filter(r => r.success);
+        const failed = response.results.filter(r => !r.success);
+        
+        if (failed.length > 0) {
+          console.error(`Failed to update deal stage:`, failed);
+          const errorMessage = failed[0].errors?.[0] || failed[0].message || 'Update failed';
+          throw new Error(errorMessage);
+        }
+        
+        return successful[0]?.data;
+      }
+    } catch (error) {
+      console.error("Error updating deal stage:", error?.response?.data?.message || error);
+      throw error;
     }
-
-    const updatedDeal = {
-      ...this.deals[index],
-      stage: await this.validateStage(stage),
-      updatedAt: new Date().toISOString()
-    };
-
-    this.deals[index] = updatedDeal;
-    return { ...updatedDeal };
   }
 
   async update(id, dealData) {
-    await delay(350);
-    
-    const index = this.deals.findIndex(deal => deal.Id === parseInt(id));
-    if (index === -1) {
-      throw new Error("Deal not found");
+    try {
+      const params = {
+        records: [{
+          Id: parseInt(id),
+          Name: dealData.title_c || dealData.Name,
+          title_c: dealData.title_c,
+          value_c: parseFloat(dealData.value_c) || 0,
+          stage_c: dealData.stage_c,
+          probability_c: parseInt(dealData.probability_c) || 0,
+          expected_close_date_c: dealData.expected_close_date_c ? new Date(dealData.expected_close_date_c).toISOString() : null,
+          notes_c: dealData.notes_c?.trim() || "",
+          contact_id_c: parseInt(dealData.contact_id_c),
+          updated_at_c: new Date().toISOString()
+        }]
+      };
+      
+      const response = await this.apperClient.updateRecord(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      if (response.results) {
+        const successful = response.results.filter(r => r.success);
+        const failed = response.results.filter(r => !r.success);
+        
+        if (failed.length > 0) {
+          console.error(`Failed to update deal:`, failed);
+          const errorMessage = failed[0].errors?.[0] || failed[0].message || 'Update failed';
+          throw new Error(errorMessage);
+        }
+        
+        return successful[0]?.data;
+      }
+    } catch (error) {
+      console.error("Error updating deal:", error?.response?.data?.message || error);
+      throw error;
     }
-
-    const updatedDeal = {
-      ...this.deals[index],
-      ...dealData,
-      updatedAt: new Date().toISOString()
-    };
-
-    this.deals[index] = updatedDeal;
-    return { ...updatedDeal };
   }
 
   async delete(id) {
-    await delay(250);
-    
-    const index = this.deals.findIndex(deal => deal.Id === parseInt(id));
-    if (index === -1) {
-      throw new Error("Deal not found");
+    try {
+      const params = { 
+        RecordIds: [parseInt(id)]
+      };
+      
+      const response = await this.apperClient.deleteRecord(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      if (response.results) {
+        const failed = response.results.filter(r => !r.success);
+        
+        if (failed.length > 0) {
+          console.error(`Failed to delete deal:`, failed);
+          const errorMessage = failed[0].message || 'Delete failed';
+          throw new Error(errorMessage);
+        }
+        
+        return true;
+      }
+    } catch (error) {
+      console.error("Error deleting deal:", error?.response?.data?.message || error);
+      throw error;
     }
-
-    const deletedDeal = { ...this.deals[index] };
-    this.deals.splice(index, 1);
-    return deletedDeal;
   }
 }
 

@@ -89,22 +89,63 @@ to: "/reports",
         ))}
       </nav>
 
-      {/* User Section */}
+{/* User Section */}
       {!isCollapsed && (
-        <div className="p-4 border-t border-neutral-100">
-          <div className="flex items-center space-x-3 p-3 rounded-lg bg-neutral-50">
-            <div className="w-8 h-8 bg-gradient-to-br from-neutral-400 to-neutral-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-              U
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-neutral-900 truncate">Demo User</p>
-              <p className="text-xs text-neutral-500 truncate">demo@contactflow.com</p>
-            </div>
-          </div>
-        </div>
+        <UserSection />
       )}
     </div>
   );
 };
 
+// User Section Component with Authentication
+function UserSection() {
+  const { useSelector } = require('react-redux');
+  const { useContext } = require('react');
+  const { AuthContext } = require('../../App');
+  
+  const userState = useSelector((state) => state.user);
+  const { logout } = useContext(AuthContext);
+  const user = userState?.user;
+  
+  const handleLogout = async () => {
+    if (confirm('Are you sure you want to logout?')) {
+      await logout();
+    }
+  };
+  
+  const getInitials = (user) => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+    }
+    return user?.emailAddress?.charAt(0)?.toUpperCase() || 'U';
+  };
+  
+  return (
+    <div className="p-4 border-t border-neutral-100">
+      <div className="flex items-center space-x-3 p-3 rounded-lg bg-neutral-50">
+        <div className="w-8 h-8 bg-gradient-to-br from-neutral-400 to-neutral-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+          {getInitials(user)}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-neutral-900 truncate">
+            {user?.firstName && user?.lastName 
+              ? `${user.firstName} ${user.lastName}`
+              : user?.emailAddress || 'User'
+            }
+          </p>
+          <p className="text-xs text-neutral-500 truncate">
+            {user?.emailAddress || 'user@contactflow.com'}
+          </p>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="p-1 hover:bg-neutral-200 rounded transition-colors duration-200"
+          title="Logout"
+        >
+          <ApperIcon name="LogOut" className="w-4 h-4 text-neutral-500" />
+        </button>
+      </div>
+    </div>
+  );
+}
 export default Sidebar;

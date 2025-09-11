@@ -8,15 +8,15 @@ import contactService from "@/services/api/contactService";
 import { cn } from "@/utils/cn";
 
 const ContactModal = ({ isOpen, onClose, contact = null, onContactSaved }) => {
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    company: "",
-    jobTitle: "",
-    address: "",
-    notes: ""
+const [formData, setFormData] = useState({
+    first_name_c: "",
+    last_name_c: "",
+    email_c: "",
+    phone_c: "",
+    company_c: "",
+    job_title_c: "",
+    address_c: "",
+    notes_c: ""
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,26 +25,26 @@ const ContactModal = ({ isOpen, onClose, contact = null, onContactSaved }) => {
 
   useEffect(() => {
     if (isOpen && contact) {
-      setFormData({
-        firstName: contact.firstName || "",
-        lastName: contact.lastName || "",
-        email: contact.email || "",
-        phone: contact.phone || "",
-        company: contact.company || "",
-        jobTitle: contact.jobTitle || "",
-        address: contact.address || "",
-        notes: contact.notes || ""
+setFormData({
+        first_name_c: contact.first_name_c || "",
+        last_name_c: contact.last_name_c || "",
+        email_c: contact.email_c || "",
+        phone_c: contact.phone_c || "",
+        company_c: contact.company_c || "",
+        job_title_c: contact.job_title_c || "",
+        address_c: contact.address_c || "",
+        notes_c: contact.notes_c || ""
       });
     } else if (isOpen && !contact) {
       setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        company: "",
-        jobTitle: "",
-        address: "",
-        notes: ""
+first_name_c: "",
+        last_name_c: "",
+        email_c: "",
+        phone_c: "",
+        company_c: "",
+        job_title_c: "",
+        address_c: "",
+        notes_c: ""
       });
     }
     
@@ -70,23 +70,22 @@ const ContactModal = ({ isOpen, onClose, contact = null, onContactSaved }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = "First name is required";
+if (!formData.first_name_c.trim()) {
+      newErrors.first_name_c = "First name is required";
     }
 
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = "Last name is required";
+if (!formData.last_name_c.trim()) {
+      newErrors.last_name_c = "Last name is required";
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
+if (!formData.email_c.trim()) {
+      newErrors.email_c = "Email is required";
     } else {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email)) {
-        newErrors.email = "Please enter a valid email address";
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email_c)) {
+        newErrors.email_c = "Please enter a valid email address";
       }
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -164,19 +163,19 @@ const ContactModal = ({ isOpen, onClose, contact = null, onContactSaved }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 label="First Name"
-                name="firstName"
-                value={formData.firstName}
+name="first_name_c"
+                value={formData.first_name_c}
                 onChange={handleInputChange}
-                error={errors.firstName}
+                error={errors.first_name_c}
                 required
                 placeholder="Enter first name"
               />
               <FormField
-                label="Last Name"
-                name="lastName"
-                value={formData.lastName}
+label="Last Name"
+                name="last_name_c"
+                value={formData.last_name_c}
                 onChange={handleInputChange}
-                error={errors.lastName}
+                error={errors.last_name_c}
                 required
                 placeholder="Enter last name"
               />
@@ -185,19 +184,19 @@ const ContactModal = ({ isOpen, onClose, contact = null, onContactSaved }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 label="Email"
-                name="email"
+name="email_c"
                 type="email"
-                value={formData.email}
+                value={formData.email_c}
                 onChange={handleInputChange}
-                error={errors.email}
+                error={errors.email_c}
                 required
                 placeholder="Enter email address"
               />
               <FormField
-                label="Phone"
-                name="phone"
+label="Phone"
+                name="phone_c"
                 type="tel"
-                value={formData.phone}
+                value={formData.phone_c}
                 onChange={handleInputChange}
                 error={errors.phone}
                 placeholder="Enter phone number"
@@ -207,28 +206,28 @@ const ContactModal = ({ isOpen, onClose, contact = null, onContactSaved }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 label="Company"
-                name="company"
-                value={formData.company}
+name="company_c"
+                value={formData.company_c}
                 onChange={handleInputChange}
-                error={errors.company}
+                error={errors.company_c}
                 placeholder="Enter company name"
               />
               <FormField
                 label="Job Title"
-                name="jobTitle"
-                value={formData.jobTitle}
+name="job_title_c"
+                value={formData.job_title_c}
                 onChange={handleInputChange}
-                error={errors.jobTitle}
+                error={errors.job_title_c}
                 placeholder="Enter job title"
               />
             </div>
 
             <FormField
               label="Address"
-              name="address"
-              value={formData.address}
+name="address_c"
+              value={formData.address_c}
               onChange={handleInputChange}
-              error={errors.address}
+              error={errors.address_c}
               placeholder="Enter address"
             />
 
@@ -237,7 +236,7 @@ const ContactModal = ({ isOpen, onClose, contact = null, onContactSaved }) => {
                 Notes
               </label>
               <textarea
-                name="notes"
+name="notes_c"
                 value={formData.notes}
                 onChange={handleInputChange}
                 placeholder="Add any additional notes..."

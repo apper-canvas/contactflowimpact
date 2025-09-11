@@ -1,161 +1,290 @@
-import contactsData from "@/services/mockData/contacts.json";
-
-// Simulate network delay
-const delay = (ms = 300) => new Promise(resolve => setTimeout(resolve, ms));
-
 class ContactService {
   constructor() {
-    this.contacts = [...contactsData];
+    const { ApperClient } = window.ApperSDK;
+    this.apperClient = new ApperClient({
+      apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+      apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+    });
+    this.tableName = 'contact_c';
   }
 
   async getAll() {
-    await delay();
-    return [...this.contacts].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    try {
+      const params = {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "first_name_c"}},
+          {"field": {"Name": "last_name_c"}},
+          {"field": {"Name": "email_c"}},
+          {"field": {"Name": "phone_c"}},
+          {"field": {"Name": "company_c"}},
+          {"field": {"Name": "job_title_c"}},
+          {"field": {"Name": "address_c"}},
+          {"field": {"Name": "notes_c"}},
+          {"field": {"Name": "tags_c"}},
+          {"field": {"Name": "created_at_c"}},
+          {"field": {"Name": "updated_at_c"}},
+          {"field": {"Name": "CreatedOn"}},
+          {"field": {"Name": "ModifiedOn"}}
+        ],
+        orderBy: [{"fieldName": "ModifiedOn", "sorttype": "DESC"}],
+        pagingInfo: {"limit": 100, "offset": 0}
+      };
+      
+      const response = await this.apperClient.fetchRecords(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      return response.data || [];
+    } catch (error) {
+      console.error("Error fetching contacts:", error?.response?.data?.message || error);
+      throw error;
+    }
   }
 
   async getById(id) {
-    await delay(200);
-    const contact = this.contacts.find(contact => contact.Id === parseInt(id));
-    if (!contact) {
-      throw new Error("Contact not found");
+    try {
+      const params = {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "first_name_c"}},
+          {"field": {"Name": "last_name_c"}},
+          {"field": {"Name": "email_c"}},
+          {"field": {"Name": "phone_c"}},
+          {"field": {"Name": "company_c"}},
+          {"field": {"Name": "job_title_c"}},
+          {"field": {"Name": "address_c"}},
+          {"field": {"Name": "notes_c"}},
+          {"field": {"Name": "tags_c"}},
+          {"field": {"Name": "created_at_c"}},
+          {"field": {"Name": "updated_at_c"}},
+          {"field": {"Name": "CreatedOn"}},
+          {"field": {"Name": "ModifiedOn"}}
+        ]
+      };
+      
+      const response = await this.apperClient.getRecordById(this.tableName, parseInt(id), params);
+      
+      if (!response.data) {
+        throw new Error("Contact not found");
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching contact ${id}:`, error?.response?.data?.message || error);
+      throw error;
     }
-    return { ...contact };
   }
 
   async create(contactData) {
-    await delay(400);
-    
-    // Validation
-    if (!contactData.firstName?.trim()) {
-      throw new Error("First name is required");
-    }
-    if (!contactData.lastName?.trim()) {
-      throw new Error("Last name is required");
-    }
-    if (!contactData.email?.trim()) {
-      throw new Error("Email is required");
-    }
-    
-    // Email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(contactData.email)) {
-      throw new Error("Please enter a valid email address");
-    }
+    try {
+      // Validation
+      if (!contactData.first_name_c?.trim()) {
+        throw new Error("First name is required");
+      }
+      if (!contactData.last_name_c?.trim()) {
+        throw new Error("Last name is required");
+      }
+      if (!contactData.email_c?.trim()) {
+        throw new Error("Email is required");
+      }
+      
+      // Email format validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(contactData.email_c)) {
+        throw new Error("Please enter a valid email address");
+      }
 
-    // Check for duplicate email
-    const existingContact = this.contacts.find(
-      contact => contact.email.toLowerCase() === contactData.email.toLowerCase()
-    );
-    if (existingContact) {
-      throw new Error("A contact with this email already exists");
+      const params = {
+        records: [{
+          Name: `${contactData.first_name_c?.trim()} ${contactData.last_name_c?.trim()}`,
+          first_name_c: contactData.first_name_c?.trim(),
+          last_name_c: contactData.last_name_c?.trim(),
+          email_c: contactData.email_c?.trim().toLowerCase(),
+          phone_c: contactData.phone_c?.trim() || "",
+          company_c: contactData.company_c?.trim() || "",
+          job_title_c: contactData.job_title_c?.trim() || "",
+          address_c: contactData.address_c?.trim() || "",
+          notes_c: contactData.notes_c?.trim() || "",
+          tags_c: Array.isArray(contactData.tags_c) ? contactData.tags_c.join(',') : (contactData.tags_c || ""),
+          created_at_c: new Date().toISOString(),
+          updated_at_c: new Date().toISOString()
+        }]
+      };
+      
+      const response = await this.apperClient.createRecord(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      if (response.results) {
+        const successful = response.results.filter(r => r.success);
+        const failed = response.results.filter(r => !r.success);
+        
+        if (failed.length > 0) {
+          console.error(`Failed to create contact:`, failed);
+          const errorMessage = failed[0].errors?.[0] || failed[0].message || 'Creation failed';
+          throw new Error(errorMessage);
+        }
+        
+        return successful[0]?.data;
+      }
+    } catch (error) {
+      console.error("Error creating contact:", error?.response?.data?.message || error);
+      throw error;
     }
-
-    const newContact = {
-      Id: Math.max(...this.contacts.map(c => c.Id), 0) + 1,
-      firstName: contactData.firstName.trim(),
-      lastName: contactData.lastName.trim(),
-      email: contactData.email.trim().toLowerCase(),
-      phone: contactData.phone?.trim() || "",
-      company: contactData.company?.trim() || "",
-      jobTitle: contactData.jobTitle?.trim() || "",
-      address: contactData.address?.trim() || "",
-      notes: contactData.notes?.trim() || "",
-      tags: contactData.tags || [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    this.contacts.push(newContact);
-    return { ...newContact };
   }
 
   async update(id, contactData) {
-    await delay(350);
-    
-    const index = this.contacts.findIndex(contact => contact.Id === parseInt(id));
-    if (index === -1) {
-      throw new Error("Contact not found");
-    }
+    try {
+      // Validation
+      if (!contactData.first_name_c?.trim()) {
+        throw new Error("First name is required");
+      }
+      if (!contactData.last_name_c?.trim()) {
+        throw new Error("Last name is required");
+      }
+      if (!contactData.email_c?.trim()) {
+        throw new Error("Email is required");
+      }
 
-    // Validation
-    if (!contactData.firstName?.trim()) {
-      throw new Error("First name is required");
-    }
-    if (!contactData.lastName?.trim()) {
-      throw new Error("Last name is required");
-    }
-    if (!contactData.email?.trim()) {
-      throw new Error("Email is required");
-    }
+      // Email format validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(contactData.email_c)) {
+        throw new Error("Please enter a valid email address");
+      }
 
-    // Email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(contactData.email)) {
-      throw new Error("Please enter a valid email address");
+      const params = {
+        records: [{
+          Id: parseInt(id),
+          Name: `${contactData.first_name_c?.trim()} ${contactData.last_name_c?.trim()}`,
+          first_name_c: contactData.first_name_c?.trim(),
+          last_name_c: contactData.last_name_c?.trim(),
+          email_c: contactData.email_c?.trim().toLowerCase(),
+          phone_c: contactData.phone_c?.trim() || "",
+          company_c: contactData.company_c?.trim() || "",
+          job_title_c: contactData.job_title_c?.trim() || "",
+          address_c: contactData.address_c?.trim() || "",
+          notes_c: contactData.notes_c?.trim() || "",
+          tags_c: Array.isArray(contactData.tags_c) ? contactData.tags_c.join(',') : (contactData.tags_c || ""),
+          updated_at_c: new Date().toISOString()
+        }]
+      };
+      
+      const response = await this.apperClient.updateRecord(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      if (response.results) {
+        const successful = response.results.filter(r => r.success);
+        const failed = response.results.filter(r => !r.success);
+        
+        if (failed.length > 0) {
+          console.error(`Failed to update contact:`, failed);
+          const errorMessage = failed[0].errors?.[0] || failed[0].message || 'Update failed';
+          throw new Error(errorMessage);
+        }
+        
+        return successful[0]?.data;
+      }
+    } catch (error) {
+      console.error("Error updating contact:", error?.response?.data?.message || error);
+      throw error;
     }
-
-    // Check for duplicate email (excluding current contact)
-    const existingContact = this.contacts.find(
-      contact => contact.Id !== parseInt(id) && 
-      contact.email.toLowerCase() === contactData.email.toLowerCase()
-    );
-    if (existingContact) {
-      throw new Error("A contact with this email already exists");
-    }
-
-    const updatedContact = {
-      ...this.contacts[index],
-      firstName: contactData.firstName.trim(),
-      lastName: contactData.lastName.trim(),
-      email: contactData.email.trim().toLowerCase(),
-      phone: contactData.phone?.trim() || "",
-      company: contactData.company?.trim() || "",
-      jobTitle: contactData.jobTitle?.trim() || "",
-      address: contactData.address?.trim() || "",
-      notes: contactData.notes?.trim() || "",
-      tags: contactData.tags || this.contacts[index].tags,
-      updatedAt: new Date().toISOString()
-    };
-
-    this.contacts[index] = updatedContact;
-    return { ...updatedContact };
   }
 
   async delete(id) {
-    await delay(250);
-    
-    const index = this.contacts.findIndex(contact => contact.Id === parseInt(id));
-    if (index === -1) {
-      throw new Error("Contact not found");
+    try {
+      const params = { 
+        RecordIds: [parseInt(id)]
+      };
+      
+      const response = await this.apperClient.deleteRecord(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      if (response.results) {
+        const failed = response.results.filter(r => !r.success);
+        
+        if (failed.length > 0) {
+          console.error(`Failed to delete contact:`, failed);
+          const errorMessage = failed[0].message || 'Delete failed';
+          throw new Error(errorMessage);
+        }
+        
+        return true;
+      }
+    } catch (error) {
+      console.error("Error deleting contact:", error?.response?.data?.message || error);
+      throw error;
     }
-
-    const deletedContact = { ...this.contacts[index] };
-    this.contacts.splice(index, 1);
-    return deletedContact;
   }
 
   async search(query) {
-    await delay(200);
-    
-    if (!query.trim()) {
-      return await this.getAll();
+    try {
+      if (!query.trim()) {
+        return await this.getAll();
+      }
+
+      const searchTerm = query.toLowerCase().trim();
+      const params = {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "first_name_c"}},
+          {"field": {"Name": "last_name_c"}},
+          {"field": {"Name": "email_c"}},
+          {"field": {"Name": "phone_c"}},
+          {"field": {"Name": "company_c"}},
+          {"field": {"Name": "job_title_c"}},
+          {"field": {"Name": "address_c"}},
+          {"field": {"Name": "notes_c"}},
+          {"field": {"Name": "tags_c"}},
+          {"field": {"Name": "created_at_c"}},
+          {"field": {"Name": "updated_at_c"}},
+          {"field": {"Name": "CreatedOn"}},
+          {"field": {"Name": "ModifiedOn"}}
+        ],
+        whereGroups: [{
+          "operator": "OR",
+          "subGroups": [
+            {"conditions": [{"fieldName": "first_name_c", "operator": "Contains", "values": [searchTerm]}], "operator": ""},
+            {"conditions": [{"fieldName": "last_name_c", "operator": "Contains", "values": [searchTerm]}], "operator": ""},
+            {"conditions": [{"fieldName": "email_c", "operator": "Contains", "values": [searchTerm]}], "operator": ""},
+            {"conditions": [{"fieldName": "company_c", "operator": "Contains", "values": [searchTerm]}], "operator": ""},
+            {"conditions": [{"fieldName": "job_title_c", "operator": "Contains", "values": [searchTerm]}], "operator": ""},
+            {"conditions": [{"fieldName": "phone_c", "operator": "Contains", "values": [searchTerm]}], "operator": ""},
+            {"conditions": [{"fieldName": "tags_c", "operator": "Contains", "values": [searchTerm]}], "operator": ""}
+          ]
+        }],
+        orderBy: [{"fieldName": "ModifiedOn", "sorttype": "DESC"}],
+        pagingInfo: {"limit": 100, "offset": 0}
+      };
+      
+      const response = await this.apperClient.fetchRecords(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      return response.data || [];
+    } catch (error) {
+      console.error("Error searching contacts:", error?.response?.data?.message || error);
+      throw error;
     }
-
-    const searchTerm = query.toLowerCase().trim();
-    const filtered = this.contacts.filter(contact => {
-      return (
-        contact.firstName.toLowerCase().includes(searchTerm) ||
-        contact.lastName.toLowerCase().includes(searchTerm) ||
-        contact.email.toLowerCase().includes(searchTerm) ||
-        contact.company.toLowerCase().includes(searchTerm) ||
-        contact.jobTitle.toLowerCase().includes(searchTerm) ||
-        contact.phone.includes(searchTerm) ||
-        contact.tags.some(tag => tag.toLowerCase().includes(searchTerm))
-      );
-    });
-
-    return filtered.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
   }
 }
 
+const contactService = new ContactService();
 export default new ContactService();
